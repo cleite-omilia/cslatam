@@ -47,26 +47,52 @@ export const onRequestPut: PagesFunction<Env> = async ({ params, request, env })
     .bind(...values)
     .run();
 
-  // If phase was completed, advance the opportunity to next phase
-  if (body.completed_at) {
+  // Recalculate current_phase based on all phases in the current round
+  if (body.completed_at !== undefined) {
     const phase = await env.DB.prepare('SELECT * FROM phases WHERE id = ?')
       .bind(id)
       .first<{ opportunity_id: number; phase_key: string; round_number: number }>();
 
     if (phase) {
-      const nextPhase = PHASE_ORDER[phase.phase_key];
-      if (nextPhase) {
-        const now = new Date().toISOString().slice(0, 10);
-        // Update opportunity current_phase
+      // Get the opportunity's current round
+      const opp = await env.DB.prepare('SELECT round_number FROM opportunities WHERE id = ?')
+        .bind(phase.opportunity_id)
+        .first<{ round_number: number }>();
+
+      if (opp) {
+        // Get all phases for the current round, ordered
+        const allPhases = await env.DB.prepare(`
+          SELECT phase_key, completed_at, entry_date FROM phases
+          WHERE opportunity_id = ? AND round_number = ?
+          ORDER BY phase_order ASC
+        `).bind(phase.opportunity_id, opp.round_number).all<{ phase_key: string; completed_at: string | null; entry_date: string | null }>();
+
+        // Find the first non-completed phase with an entry_date, or the first non-completed phase
+        let newCurrentPhase = allPhases.results[allPhases.results.length - 1]?.phase_key;
+        for (const p of allPhases.results) {
+          if (!p.completed_at) {
+            newCurrentPhase = p.phase_key;
+            break;
+          }
+        }
+
         await env.DB.prepare(`
           UPDATE opportunities SET current_phase = ?, updated_at = datetime('now') WHERE id = ?
-        `).bind(nextPhase, phase.opportunity_id).run();
+        `).bind(newCurrentPhase, phase.opportunity_id).run();
 
-        // Set entry_date on next phase
-        await env.DB.prepare(`
-          UPDATE phases SET entry_date = ?
-          WHERE opportunity_id = ? AND round_number = ? AND phase_key = ? AND entry_date IS NULL
-        `).bind(now, phase.opportunity_id, phase.round_number, nextPhase).run();
+        // If a phase was just completed, set entry_date on the next phase if not already set
+        if (body.completed_at) {
+          const nextPhase = PHASE_ORDER[phase.phase_key];
+          if (nextPhase) {
+            await env.DB.prepare(`
+              UPDATE phases SET entry_date = COALESCE(entry_date, ?)
+              WHERE opportunity_id = ? AND round_number = ? AND phase_key = ?
+            `).bind(
+              new Date().toISOString().slice(0, 10),
+              phase.opportunity_id, opp.round_number, nextPhase
+            ).run();
+          }
+        }
       }
     }
   }

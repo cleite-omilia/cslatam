@@ -93,42 +93,62 @@ export default function PhaseTimeline({ phases, isAdmin, onUpdatePhase }: Props)
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                        {phase.entry_date && (
-                          <span className="text-xs text-gray-500">
-                            Início:{' '}
-                            {new Date(
-                              phase.entry_date + 'T00:00:00'
-                            ).toLocaleDateString('pt-BR')}
-                          </span>
-                        )}
-                        {phase.estimated_delivery_date && (
-                          <span className="text-xs text-gray-500">
-                            Estimativa:{' '}
-                            {new Date(
-                              phase.estimated_delivery_date + 'T00:00:00'
-                            ).toLocaleDateString('pt-BR')}
-                          </span>
-                        )}
-                        {phase.completed_at && (
-                          <span className="text-xs text-green-600 font-medium">
-                            Concluído:{' '}
-                            {new Date(
-                              phase.completed_at + 'T00:00:00'
-                            ).toLocaleDateString('pt-BR')}
-                          </span>
-                        )}
-                      </div>
+                      {/* Read-only dates (non-admin) */}
+                      {!isAdmin && (
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                          {phase.entry_date && (
+                            <span className="text-xs text-gray-500">
+                              Início:{' '}
+                              {new Date(
+                                phase.entry_date + 'T00:00:00'
+                              ).toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
+                          {phase.estimated_delivery_date && (
+                            <span className="text-xs text-gray-500">
+                              Estimativa:{' '}
+                              {new Date(
+                                phase.estimated_delivery_date + 'T00:00:00'
+                              ).toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
+                          {phase.completed_at && (
+                            <span className="text-xs text-green-600 font-medium">
+                              Concluído:{' '}
+                              {new Date(
+                                phase.completed_at + 'T00:00:00'
+                              ).toLocaleDateString('pt-BR')}
+                            </span>
+                          )}
+                        </div>
+                      )}
 
-                      {/* Admin controls */}
-                      {isAdmin && isActive && onUpdatePhase && (
-                        <div className="flex flex-wrap gap-2 mt-2">
+                      {/* Admin editable dates — all phases */}
+                      {isAdmin && onUpdatePhase && (
+                        <div className="flex flex-wrap gap-3 mt-2">
                           <div className="flex items-center gap-1">
-                            <label className="text-xs text-gray-500">
+                            <label className="text-xs text-gray-500 whitespace-nowrap">
+                              Início:
+                            </label>
+                            <input
+                              type="date"
+                              key={`entry-${phase.id}-${phase.entry_date}`}
+                              defaultValue={phase.entry_date || ''}
+                              onChange={(e) =>
+                                onUpdatePhase(phase.id, {
+                                  entry_date: e.target.value || null,
+                                })
+                              }
+                              className="text-xs border border-gray-300 rounded px-2 py-1"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <label className="text-xs text-gray-500 whitespace-nowrap">
                               Estimativa:
                             </label>
                             <input
                               type="date"
+                              key={`est-${phase.id}-${phase.estimated_delivery_date}`}
                               defaultValue={phase.estimated_delivery_date || ''}
                               onChange={(e) =>
                                 onUpdatePhase(phase.id, {
@@ -138,18 +158,36 @@ export default function PhaseTimeline({ phases, isAdmin, onUpdatePhase }: Props)
                               className="text-xs border border-gray-300 rounded px-2 py-1"
                             />
                           </div>
-                          <button
-                            onClick={() =>
-                              onUpdatePhase(phase.id, {
-                                completed_at: new Date()
-                                  .toISOString()
-                                  .slice(0, 10),
-                              })
-                            }
-                            className="text-xs bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition-colors"
-                          >
-                            Concluir Fase
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <label className="text-xs text-gray-500 whitespace-nowrap">
+                              Concluído:
+                            </label>
+                            <input
+                              type="date"
+                              key={`done-${phase.id}-${phase.completed_at}`}
+                              defaultValue={phase.completed_at || ''}
+                              onChange={(e) =>
+                                onUpdatePhase(phase.id, {
+                                  completed_at: e.target.value || null,
+                                })
+                              }
+                              className="text-xs border border-gray-300 rounded px-2 py-1"
+                            />
+                          </div>
+                          {isActive && (
+                            <button
+                              onClick={() =>
+                                onUpdatePhase(phase.id, {
+                                  completed_at: new Date()
+                                    .toISOString()
+                                    .slice(0, 10),
+                                })
+                              }
+                              className="text-xs bg-green-600 text-white px-3 py-1 rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              Concluir Hoje
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
