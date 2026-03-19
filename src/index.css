@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-omilia-50: #f0f4fe;
+  --color-omilia-100: #dde6fc;
+  --color-omilia-200: #c3d4fa;
+  --color-omilia-500: #4f76e8;
+  --color-omilia-600: #3a5cc8;
+  --color-omilia-700: #2d47a3;
+  --color-omilia-800: #1e3278;
+  --color-omilia-900: #162457;
+
+  --color-phase-discovery: #3b82f6;
+  --color-phase-journey: #6366f1;
+  --color-phase-dev: #8b5cf6;
+  --color-phase-internal: #f59e0b;
+  --color-phase-partner: #f97316;
+  --color-phase-demo: #22c55e;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f8fafc;
+}
